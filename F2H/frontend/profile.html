@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Profile - Face2Hire</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        secondary: '#8b5cf6',
+                        dark: '#0f172a'
+                    }
+                }
+            }
+        };
+    </script>
+
+    <script src="AuthService.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #f8fafc;
+            color: #0f172a;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            box-shadow: 0 8px 30px rgba(15, 23, 42, 0.05);
+        }
+
+        .stat-card {
+            transition: all 0.25s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+        }
+
+        .nav-link {
+            transition: 0.2s ease;
+        }
+
+        .nav-link:hover {
+            background: #eef2ff;
+            color: #4f46e5;
+        }
+
+        .nav-link.active {
+            background: #eef2ff;
+            color: #4f46e5;
+            font-weight: 600;
+        }
+
+        .avatar {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            transition: 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.25);
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #334155;
+            transition: 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .input-field {
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 11px 13px;
+            outline: none;
+            transition: 0.2s ease;
+            background: white;
+        }
+
+        .input-field:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .danger-zone {
+            border: 1px solid #fecaca;
+            background: #fff7f7;
+        }
+
+        .score-badge {
+            min-width: 55px;
+            text-align: center;
+            padding: 5px 9px;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .score-high {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .score-medium {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .score-low {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        #progressChart {
+            width: 100%;
+            height: 330px;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+            #progressChart {
+                height: 280px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ================= NAVBAR ================= -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="h-16 flex items-center justify-between">
+
+                <a href="dashboard.html" class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl gradient-bg flex items-center justify-center">
+                        <span class="text-white font-bold">F</span>
+                    </div>
+
+                    <span class="text-xl font-bold text-slate-900">
+                        Face2Hire
+                    </span>
+                </a>
+
+                <div class="hidden md:flex items-center gap-2">
+
+                    <a href="dashboard.html"
+                       class="nav-link px-4 py-2 rounded-lg text-slate-600">
+                        Dashboard
+                    </a>
+
+                    <a href="interview-setup.html"
+                       class="nav-link px-4 py-2 rounded-lg text-slate-600">
+                        Interview
+                    </a>
+
+                    <a href="profile.html"
+                       class="nav-link active px-4 py-2 rounded-lg">
+                        Profile
+                    </a>
+
+                </div>
+
+                <div class="flex items-center gap-3">
+
+                    <div id="navAvatar"
+                         class="avatar w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                        U
+                    </div>
+
+                    <div class="hidden sm:block">
+                        <p id="navUserName"
+                           class="text-sm font-semibold text-slate-800">
+                            User
+                        </p>
+                    </div>
+
+                    <button
+                        onclick="handleLogout()"
+                        class="text-sm text-slate-500 hover:text-red-600 transition">
+                        Logout
+                    </button>
+
+                </div>
+            </div>
+        </div>
+    </nav>
+
+
+    <!-- ================= MAIN ================= -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- HEADER -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-slate-900">
+                Profile
+            </h1>
+
+            <p class="mt-2 text-slate-500">
+                Manage your account and track your interview progress.
+            </p>
+        </div>
+
+
+        <!-- ================= PROFILE + STATS ================= -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+
+            <!-- PROFILE CARD -->
+            <div class="card p-6">
+
+                <div class="flex flex-col items-center text-center">
+
+                    <div class="relative mb-4">
+
+                        <div id="profileAvatar"
+                             class="avatar w-28 h-28 rounded-full flex items-center justify-center text-white text-4xl font-bold overflow-hidden">
+                            U
+                        </div>
+
+                        <button
+                            onclick="changeAvatar()"
+                            class="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-white border border-slate-200 shadow flex items-center justify-center hover:bg-slate-50"
+                            title="Change avatar">
+                            ✎
+                        </button>
+
+                    </div>
+
+                    <h2 id="profileName"
+                        class="text-xl font-bold text-slate-900">
+                        User
+                    </h2>
+
+                    <p id="profileRole"
+                       class="text-slate-500 mt-1">
+                        Job Title
+                    </p>
+
+                    <p id="profileIndustry"
+                       class="text-sm text-slate-400 mt-1">
+                        Industry
+                    </p>
+
+                    <div class="mt-5 pt-5 border-t border-slate-100 w-full">
+
+                        <p class="text-xs uppercase tracking-wide text-slate-400">
+                            Member since
+                        </p>
+
+                        <p id="memberSince"
+                           class="mt-1 font-medium text-slate-700">
+                            -
+                        </p>
+
+                    </div>
+
+                </div>
+            </div>
+
+
+            <!-- TOTAL INTERVIEWS -->
+            <div class="card stat-card p-6">
+
+                <div class="flex items-start justify-between">
+
+                    <div>
+                        <p class="text-sm text-slate-500">
+                            Total Interviews
+                        </p>
+
+                        <p id="totalInterviews"
+                           class="text-4xl font-bold text-slate-900 mt-3">
+                            0
+                        </p>
+
+                        <p class="text-sm text-slate-400 mt-2">
+                            Completed interviews
+                        </p>
+                    </div>
+
+                    <div class="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-2xl">
+                        🎤
+                    </div>
+
+                </div>
+            </div>
+
+
+            <!-- AVERAGE SCORE -->
+            <div class="card stat-card p-6">
+
+                <div class="flex items-start justify-between">
+
+                    <div>
+                        <p class="text-sm text-slate-500">
+                            Average Score
+                        </p>
+
+                        <p id="averageScore"
+                           class="text-4xl font-bold text-slate-900 mt-3">
+                            0
+                        </p>
+
+                        <p class="text-sm text-slate-400 mt-2">
+                            Across completed interviews
+                        </p>
+                    </div>
+
+                    <div class="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center text-2xl">
+                        📊
+                    </div>
+
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- ================= PROGRESS CHART ================= -->
+        <section class="card p-6 mb-8">
+
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900">
+                        Interview Progress
+                    </h2>
+
+                    <p class="text-sm text-slate-500 mt-1">
+                        Your performance across completed interviews.
+                    </p>
+                </div>
+
+                <div class="flex items-center gap-2 text-sm text-slate-500">
+                    <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                    Overall Score
+                </div>
+
+            </div>
+
+            <div id="progressChart"></div>
+
+            <div id="noChartData"
+                 class="hidden text-center py-16 text-slate-400">
+                Complete your first interview to see your progress here.
+            </div>
+
+        </section>
+
+
+        <!-- ================= RECENT INTERVIEWS ================= -->
+        <section class="card p-6 mb-8">
+
+            <div class="mb-5">
+                <h2 class="text-xl font-bold text-slate-900">
+                    Interview History
+                </h2>
+
+                <p class="text-sm text-slate-500 mt-1">
+                    Your recent completed interviews and scores.
+                </p>
+            </div>
+
+            <div id="interviewHistory">
+
+                <div class="text-center py-10 text-slate-400">
+                    Loading interview history...
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= ACCOUNT SETTINGS ================= -->
+        <section class="card p-6 mb-8">
+
+            <div class="mb-6">
+
+                <h2 class="text-xl font-bold text-slate-900">
+                    Account Information
+                </h2>
+
+                <p class="text-sm text-slate-500 mt-1">
+                    Update your basic profile information.
+                </p>
+
+            </div>
+
+
+            <form id="profileForm"
+                  class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        First Name
+                    </label>
+
+                    <input
+                        id="firstName"
+                        type="text"
+                        class="input-field"
+                        required>
+                </div>
+
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Last Name
+                    </label>
+
+                    <input
+                        id="lastName"
+                        type="text"
+                        class="input-field"
+                        required>
+                </div>
+
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Email
+                    </label>
+
+                    <input
+                        id="email"
+                        type="email"
+                        class="input-field bg-slate-50"
+                        readonly>
+                </div>
+
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Job Title
+                    </label>
+
+                    <input
+                        id="jobTitle"
+                        type="text"
+                        class="input-field"
+                        placeholder="e.g. Data Analyst">
+                </div>
+
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Industry
+                    </label>
+
+                    <input
+                        id="industry"
+                        type="text"
+                        class="input-field"
+                        placeholder="e.g. Technology">
+                </div>
+
+
+                <div class="md:col-span-2 flex justify-end">
+
+                    <button
+                        id="saveProfileBtn"
+                        type="submit"
+                        class="btn-primary px-6 py-3 rounded-lg font-semibold">
+                        Save Changes
+                    </button>
+
+                </div>
+
+            </form>
+
+            <p id="profileMessage"
+               class="mt-4 text-sm hidden">
+            </p>
+
+        </section>
+
+
+        <!-- ================= PASSWORD ================= -->
+        <section class="card p-6 mb-8">
+
+            <div class="mb-6">
+
+                <h2 class="text-xl font-bold text-slate-900">
+                    Change Password
+                </h2>
+
+                <p class="text-sm text-slate-500 mt-1">
+                    Update your account password securely.
+                </p>
+
+            </div>
+
+
+            <form id="passwordForm"
+                  class="max-w-2xl space-y-5">
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Current Password
+                    </label>
+
+                    <input
+                        id="currentPassword"
+                        type="password"
+                        class="input-field"
+                        required>
+                </div>
+
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        New Password
+                    </label>
+
+                    <input
+                        id="newPassword"
+                        type="password"
+                        class="input-field"
+                        minlength="6"
+                        required>
+                </div>
+
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Confirm New Password
+                    </label>
+
+                    <input
+                        id="confirmPassword"
+                        type="password"
+                        class="input-field"
+                        minlength="6"
+                        required>
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="btn-primary px-6 py-3 rounded-lg font-semibold">
+                    Update Password
+                </button>
+
+            </form>
+
+            <p id="passwordMessage"
+               class="mt-4 text-sm hidden">
+            </p>
+
+        </section>
+
+
+        <!-- ================= DELETE ACCOUNT ================= -->
+        <section class="danger-zone rounded-2xl p-6">
+
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+
+                <div>
+
+                    <h2 class="text-lg font-bold text-red-700">
+                        Delete Account
+                    </h2>
+
+                    <p class="text-sm text-red-600 mt-1 max-w-2xl">
+                        Deactivate your Face2Hire account. You will need to confirm your password.
+                    </p>
+
+                </div>
+
+                <button
+                    onclick="deleteAccount()"
+                    class="px-5 py-2.5 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 transition">
+                    Delete Account
+                </button>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- ================= JAVASCRIPT ================= -->
+    <script>
+
+        let currentUser = null;
+        let dashboardData = null;
+        let progressChart = null;
+
+
+        // ==========================================
+        // INITIAL LOAD
+        // ==========================================
+
+        document.addEventListener('DOMContentLoaded', async () => {
+
+            try {
+
+                const user = AuthService.getUser();
+
+                if (!user) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                await loadProfile();
+
+                await loadDashboard();
+
+            } catch (error) {
+
+                console.error('Profile page error:', error);
+
+                showMessage(
+                    'profileMessage',
+                    error.message || 'Unable to load profile.',
+                    false
+                );
+
+            }
+
+        });
+
+
+        // ==========================================
+        // LOAD PROFILE
+        // ==========================================
+
+        async function loadProfile() {
+
+            const response = await AuthService.getProfileData();
+
+            if (!response.success) {
+                throw new Error(response.message || 'Unable to load profile');
+            }
+
+            const data = response.data || {};
+            currentUser = data.user || AuthService.getUser();
+
+            updateProfileUI(currentUser);
+
+        }
+
+
+        // ==========================================
+        // UPDATE PROFILE UI
+        // ==========================================
+
+        function updateProfileUI(user) {
+
+            const firstName = user.firstName || '';
+            const lastName = user.lastName || '';
+
+            const fullName =
+                user.fullName ||
+                `${firstName} ${lastName}`.trim() ||
+                'User';
+
+            const initials =
+                `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() ||
+                'U';
+
+            document.getElementById('profileName').textContent = fullName;
+
+            document.getElementById('profileRole').textContent =
+                user.jobTitle || 'Job Title not added';
+
+            document.getElementById('profileIndustry').textContent =
+                user.industry || 'Industry not added';
+
+            document.getElementById('navUserName').textContent =
+                fullName;
+
+            setAvatar(
+                document.getElementById('profileAvatar'),
+                user.avatar,
+                initials
+            );
+
+            setAvatar(
+                document.getElementById('navAvatar'),
+                user.avatar,
+                initials
+            );
+
+            document.getElementById('firstName').value =
+                firstName;
+
+            document.getElementById('lastName').value =
+                lastName;
+
+            document.getElementById('email').value =
+                user.email || '';
+
+            document.getElementById('jobTitle').value =
+                user.jobTitle || '';
+
+            document.getElementById('industry').value =
+                user.industry || '';
+
+            if (user.createdAt) {
+
+                document.getElementById('memberSince').textContent =
+                    formatDate(user.createdAt);
+
+            }
+
+        }
+
+
+        // ==========================================
+        // AVATAR
+        // ==========================================
+
+        function setAvatar(element, avatar, initials) {
+
+            if (!element) return;
+
+            if (avatar && avatar !== 'default-avatar.png') {
+
+                element.innerHTML = `
+                    <img
+                        src="${escapeHtml(avatar)}"
+                        alt="Profile avatar"
+                        class="w-full h-full object-cover">
+                `;
+
+            } else {
+
+                element.textContent = initials;
+
+            }
+
+        }
+
+
+        async function changeAvatar() {
+
+            const avatarUrl = prompt(
+                'Enter the URL of your profile image:'
+            );
+
+            if (!avatarUrl || !avatarUrl.trim()) {
+                return;
+            }
+
+            try {
+
+                const response =
+                    await AuthService.uploadAvatar(
+                        avatarUrl.trim()
+                    );
+
+                if (!response.success) {
+                    throw new Error(
+                        response.message ||
+                        'Unable to update avatar'
+                    );
+                }
+
+                if (currentUser) {
+                    currentUser.avatar =
+                        response.data?.avatar ||
+                        avatarUrl.trim();
+                }
+
+                updateProfileUI(currentUser);
+
+                alert('Profile picture updated successfully.');
+
+            } catch (error) {
+
+                console.error(error);
+
+                alert(
+                    error.message ||
+                    'Unable to update profile picture.'
+                );
+
+            }
+
+        }
+
+
+        // ==========================================
+        // LOAD DASHBOARD DATA
+        // ==========================================
+
+        async function loadDashboard() {
+
+            const response =
+                await AuthService.getDashboardData();
+
+            if (!response.success) {
+                throw new Error(
+                    response.message ||
+                    'Unable to load interview statistics'
+                );
+            }
+
+            dashboardData =
+                response.data || {};
+
+            updateStatistics(
+                dashboardData.stats || {}
+            );
+
+            renderProgressChart(
+                dashboardData.performanceData || {}
+            );
+
+            renderInterviewHistory(
+                dashboardData.recentActivity || []
+            );
+
+        }
+
+
+        // ==========================================
+        // STATISTICS
+        // ==========================================
+
+        function updateStatistics(stats) {
+
+            document.getElementById('totalInterviews')
+                .textContent =
+                stats.totalInterviews || 0;
+
+            document.getElementById('averageScore')
+                .textContent =
+                stats.averageScore || 0;
+
+        }
+
+
+        // ==========================================
+        // PROGRESS CHART
+        // ==========================================
+
+        function renderProgressChart(data) {
+
+            const chartElement =
+                document.getElementById('progressChart');
+
+            const noDataElement =
+                document.getElementById('noChartData');
+
+            const labels =
+                data.labels || [];
+
+            const overall =
+                data.overall || [];
+
+            if (!labels.length || !overall.length) {
+
+                chartElement.classList.add('hidden');
+
+                noDataElement.classList.remove('hidden');
+
+                return;
+
+            }
+
+            chartElement.classList.remove('hidden');
+
+            noDataElement.classList.add('hidden');
+
+            if (progressChart) {
+                progressChart.dispose();
+            }
+
+            progressChart =
+                echarts.init(chartElement);
+
+            progressChart.setOption({
+
+                tooltip: {
+                    trigger: 'axis'
+                },
+
+                grid: {
+                    left: 45,
+                    right: 25,
+                    top: 25,
+                    bottom: 45
+                },
+
+                xAxis: {
+                    type: 'category',
+                    data: labels,
+                    boundaryGap: false
+                },
+
+                yAxis: {
+                    type: 'value',
+                    min: 0,
+                    max: 100,
+                    interval: 20
+                },
+
+                series: [
+
+                    {
+                        name: 'Overall Score',
+                        type: 'line',
+                        data: overall,
+                        smooth: true,
+                        symbol: 'circle',
+                        symbolSize: 8,
+                        lineStyle: {
+                            width: 3
+                        },
+                        areaStyle: {
+                            opacity: 0.08
+                        }
+                    }
+
+                ]
+
+            });
+
+        }
+
+
+        // ==========================================
+        // INTERVIEW HISTORY
+        // ==========================================
+
+        function renderInterviewHistory(interviews) {
+
+            const container =
+                document.getElementById('interviewHistory');
+
+            if (!interviews.length) {
+
+                container.innerHTML = `
+                    <div class="text-center py-12">
+                        <div class="text-4xl mb-3">🎤</div>
+
+                        <p class="font-semibold text-slate-700">
+                            No completed interviews yet
+                        </p>
+
+                        <p class="text-sm text-slate-400 mt-1">
+                            Complete an interview to start building your progress history.
+                        </p>
+
+                        <a
+                            href="interview-setup.html"
+                            class="inline-block mt-5 btn-primary px-5 py-2.5 rounded-lg font-semibold">
+                            Start Interview
+                        </a>
+                    </div>
+                `;
+
+                return;
+            }
+
+
+            container.innerHTML = interviews.map(interview => {
+
+                const score =
+                    Number(interview.score || 0);
+
+                let scoreClass = 'score-low';
+
+                if (score >= 75) {
+                    scoreClass = 'score-high';
+                } else if (score >= 50) {
+                    scoreClass = 'score-medium';
+                }
+
+                return `
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 py-4 border-b border-slate-100 last:border-b-0">
+
+                        <div class="min-w-0">
+
+                            <h3 class="font-semibold text-slate-800 truncate">
+                                ${escapeHtml(interview.title || 'AI Interview')}
+                            </h3>
+
+                            <p class="text-sm text-slate-500 mt-1">
+                                ${escapeHtml(interview.role || 'Interview')}
+                                ${interview.company
+                                    ? ` • ${escapeHtml(interview.company)}`
+                                    : ''}
+                            </p>
+
+                            <p class="text-xs text-slate-400 mt-1">
+                                ${formatDate(interview.completedAt)}
+                            </p>
+
+                        </div>
+
+                        <div class="flex items-center gap-3">
+
+                            <span class="text-sm text-slate-400">
+                                Overall
+                            </span>
+
+                            <span class="score-badge ${scoreClass}">
+                                ${score}
+                            </span>
+
+                        </div>
+
+                    </div>
+                `;
+
+            }).join('');
+
+        }
+
+
+        // ==========================================
+        // SAVE PROFILE
+        // ==========================================
+
+        document.getElementById('profileForm')
+            .addEventListener('submit', async (event) => {
+
+                event.preventDefault();
+
+                const button =
+                    document.getElementById('saveProfileBtn');
+
+                button.disabled = true;
+
+                button.textContent = 'Saving...';
+
+                try {
+
+                    const firstName =
+                        document.getElementById('firstName')
+                            .value.trim();
+
+                    const lastName =
+                        document.getElementById('lastName')
+                            .value.trim();
+
+                    const jobTitle =
+                        document.getElementById('jobTitle')
+                            .value.trim();
+
+                    const industry =
+                        document.getElementById('industry')
+                            .value.trim();
+
+
+                    const response =
+                        await AuthService.updateProfile({
+
+                            firstName,
+                            lastName,
+                            jobTitle,
+                            industry
+
+                        });
+
+
+                    if (!response.success) {
+
+                        throw new Error(
+                            response.message ||
+                            'Unable to update profile'
+                        );
+
+                    }
+
+
+                    currentUser = {
+                        ...currentUser,
+                        ...(response.data?.user || {}),
+                        firstName,
+                        lastName,
+                        jobTitle,
+                        industry
+                    };
+
+
+                    updateProfileUI(currentUser);
+
+
+                    showMessage(
+                        'profileMessage',
+                        'Profile updated successfully.',
+                        true
+                    );
+
+
+                } catch (error) {
+
+                    console.error(error);
+
+                    showMessage(
+                        'profileMessage',
+                        error.message ||
+                        'Unable to update profile.',
+                        false
+                    );
+
+                } finally {
+
+                    button.disabled = false;
+
+                    button.textContent =
+                        'Save Changes';
+
+                }
+
+            });
+
+
+        // ==========================================
+        // CHANGE PASSWORD
+        // ==========================================
+
+        document.getElementById('passwordForm')
+            .addEventListener('submit', async (event) => {
+
+                event.preventDefault();
+
+                const currentPassword =
+                    document.getElementById('currentPassword')
+                        .value;
+
+                const newPassword =
+                    document.getElementById('newPassword')
+                        .value;
+
+                const confirmPassword =
+                    document.getElementById('confirmPassword')
+                        .value;
+
+
+                if (newPassword !== confirmPassword) {
+
+                    showMessage(
+                        'passwordMessage',
+                        'New passwords do not match.',
+                        false
+                    );
+
+                    return;
+
+                }
+
+
+                try {
+
+                    const response =
+                        await AuthService.updatePassword({
+
+                            currentPassword,
+                            newPassword
+
+                        });
+
+
+                    if (!response.success) {
+
+                        throw new Error(
+                            response.message ||
+                            'Unable to change password'
+                        );
+
+                    }
+
+
+                    document.getElementById('passwordForm')
+                        .reset();
+
+
+                    showMessage(
+                        'passwordMessage',
+                        'Password updated successfully.',
+                        true
+                    );
+
+
+                } catch (error) {
+
+                    console.error(error);
+
+                    showMessage(
+                        'passwordMessage',
+                        error.message ||
+                        'Unable to update password.',
+                        false
+                    );
+
+                }
+
+            });
+
+
+        // ==========================================
+        // DELETE ACCOUNT
+        // ==========================================
+
+        async function deleteAccount() {
+
+            const confirmed =
+                confirm(
+                    'Are you sure you want to delete your account?'
+                );
+
+            if (!confirmed) {
+                return;
+            }
+
+
+            const password =
+                prompt(
+                    'Enter your password to confirm account deletion:'
+                );
+
+
+            if (!password) {
+                return;
+            }
+
+
+            try {
+
+                const response =
+                    await AuthService.deleteAccount(
+                        password
+                    );
+
+
+                if (!response.success) {
+
+                    throw new Error(
+                        response.message ||
+                        'Unable to delete account'
+                    );
+
+                }
+
+
+                alert(
+                    'Your account has been deleted successfully.'
+                );
+
+
+                AuthService.logout();
+
+                window.location.href =
+                    'login.html';
+
+
+            } catch (error) {
+
+                console.error(error);
+
+                alert(
+                    error.message ||
+                    'Unable to delete account.'
+                );
+
+            }
+
+        }
+
+
+        // ==========================================
+        // LOGOUT
+        // ==========================================
+
+        async function handleLogout() {
+
+            try {
+
+                await AuthService.logout();
+
+            } catch (error) {
+
+                console.error(
+                    'Logout error:',
+                    error
+                );
+
+            } finally {
+
+                window.location.href =
+                    'login.html';
+
+            }
+
+        }
+
+
+        // ==========================================
+        // HELPERS
+        // ==========================================
+
+        function formatDate(date) {
+
+            if (!date) {
+                return '-';
+            }
+
+            const parsedDate =
+                new Date(date);
+
+            if (isNaN(parsedDate.getTime())) {
+                return '-';
+            }
+
+            return parsedDate.toLocaleDateString(
+                'en-IN',
+                {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                }
+            );
+
+        }
+
+
+        function showMessage(
+            elementId,
+            message,
+            success
+        ) {
+
+            const element =
+                document.getElementById(elementId);
+
+            element.textContent =
+                message;
+
+            element.classList.remove(
+                'hidden',
+                'text-green-600',
+                'text-red-600'
+            );
+
+            element.classList.add(
+                success
+                    ? 'text-green-600'
+                    : 'text-red-600'
+            );
+
+        }
+
+
+        function escapeHtml(value) {
+
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+
+        }
+
+
+        // ==========================================
+        // RESPONSIVE CHART
+        // ==========================================
+
+        window.addEventListener(
+            'resize',
+            () => {
+
+                if (progressChart) {
+                    progressChart.resize();
+                }
+
+            }
+        );
+
+    </script>
+
+</body>
+</html>
